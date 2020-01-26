@@ -1,0 +1,25 @@
+﻿<Window x:Class="Starter.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Starter"
+        mc:Ignorable="d"
+        Title="MainWindow" Width="800" SizeToContent="Height">
+    <Window.Resources>
+        <Style x:Key="Margined" TargetType="FrameworkElement">
+            <Setter Property="Margin" Value="15,10" />
+        </Style>
+        <Style x:Key="Buttons" BasedOn="{StaticResource Margined}" TargetType="Button">
+            <Setter Property="Padding" Value="10,5" />
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <PasswordBox x:Name="tbPassword" Grid.Column="0" VerticalContentAlignment="Center" Style="{StaticResource Margined}" />
+        <Button x:Name="bStart" Grid.Column="1" Style="{StaticResource Buttons}" Click="OnStartClick">Start</Button>
+    </Grid>
+</Window>
