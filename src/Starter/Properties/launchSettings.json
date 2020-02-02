@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Starter": {
+      "commandName": "Project",
+      "workingDirectory": "c:\\Users\\Ivan Iakimov\\AppData\\Local\\Yandex\\YandexBrowser\\Application\\"
+    }
+  }
+}

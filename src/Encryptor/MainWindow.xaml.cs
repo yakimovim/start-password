@@ -42,47 +42,55 @@ namespace Encryptor
             {
                 bEncrypt.IsEnabled = false;
 
-                using var keyGenerator = new Rfc2898DeriveBytes(
-                    tbPassword.Password, 
-                    _salt,
-                    1000,
-                    HashAlgorithmName.SHA256);
+                EncriptSelectedFile(tbApplicationPath.Text, tbPassword.Password);
 
-                using var encryptionAlgorithm = Rijndael.Create();
+                File.Delete(tbApplicationPath.Text);
 
-                encryptionAlgorithm.BlockSize = 128;
-
-                var key = keyGenerator.GetBytes(encryptionAlgorithm.KeySize / 8);
-
-                var encryptor = encryptionAlgorithm.CreateEncryptor(key, _iv);
-
-                using var inputFileStream = new FileStream(
-                    tbApplicationPath.Text,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read
-                    );
-
-                using var outputFileStream = new FileStream(
-                    tbApplicationPath.Text + ".enc",
-                    FileMode.Create,
-                    FileAccess.Write
-                    );
-
-                using var ecnryptionStream = new CryptoStream(outputFileStream, encryptor, CryptoStreamMode.Write);
-
-                var buffer = new byte[1024];
-
-                while(true)
-                {
-                    int bytesRead = inputFileStream.Read(buffer, 0, 1024);
-                    if (bytesRead == 0)
-                        break;
-
-                    ecnryptionStream.Write(buffer, 0, bytesRead);
-                }
+                MessageBox.Show("Application is encrypted");
 
                 bEncrypt.IsEnabled = true;
+            }
+        }
+
+        private void EncriptSelectedFile(string applicationPath, string password)
+        {
+            using var keyGenerator = new Rfc2898DeriveBytes(
+                                password,
+                                _salt,
+                                1000,
+                                HashAlgorithmName.SHA256);
+
+            using var encryptionAlgorithm = Rijndael.Create();
+            encryptionAlgorithm.BlockSize = 128;
+
+            var key = keyGenerator.GetBytes(encryptionAlgorithm.KeySize / 8);
+
+            using var encryptor = encryptionAlgorithm.CreateEncryptor(key, _iv);
+
+            using var inputFileStream = new FileStream(
+                                applicationPath,
+                                FileMode.Open,
+                                FileAccess.Read,
+                                FileShare.Read
+                                );
+
+            using var outputFileStream = new FileStream(
+              applicationPath + ".enc",
+              FileMode.Create,
+              FileAccess.Write
+            );
+
+            using var ecnryptionStream = new CryptoStream(outputFileStream, encryptor, CryptoStreamMode.Write);
+
+            var buffer = new byte[1024];
+
+            while (true)
+            {
+                int bytesRead = inputFileStream.Read(buffer, 0, 1024);
+                if (bytesRead == 0)
+                    break;
+
+                ecnryptionStream.Write(buffer, 0, bytesRead);
             }
         }
     }

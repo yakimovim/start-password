@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Windows;
 
 namespace Starter
@@ -14,9 +15,19 @@ namespace Starter
         private static readonly byte[] _salt = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         private static readonly byte[] _iv = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 
+        private readonly string _encryptedApplicationPath;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            _encryptedApplicationPath = GetEncryptedApplicationPath();
+
+            if(string.IsNullOrEmpty(_encryptedApplicationPath))
+            {
+                MessageBox.Show("Unable to find single file to start");
+                Application.Current.Shutdown();
+            }
         }
 
         private void OnStartClick(object sender, RoutedEventArgs e)
@@ -24,34 +35,59 @@ namespace Starter
             if (string.IsNullOrEmpty(tbPassword.Password))
                 return;
 
-            var encryptedApplicationFiles = Directory.GetFiles(
-                Environment.CurrentDirectory,
-                "*.exe.enc"
-                );
+            var applicationPath = _encryptedApplicationPath[0..^4];
 
-            if(encryptedApplicationFiles.Length != 1)
-            {
-                MessageBox.Show("Unable to find single file to start");
-                Application.Current.Shutdown();
-            }
-
-            var encryptedApplicationPath = encryptedApplicationFiles[0];
-
-            var applicationPath = encryptedApplicationPath[0..^4];
+            Hide();
 
             if (File.Exists(applicationPath))
             {
                 Process.Start(applicationPath);
                 Application.Current.Shutdown();
+                return;
             }
 
-            bStart.IsEnabled = false;
+            DecryptApplication(applicationPath);
 
+            StartApplicationAndWaitForExit(applicationPath);
+
+            DeleteApplication(applicationPath);
+
+            Application.Current.Shutdown();
+        }
+
+        private string GetEncryptedApplicationPath()
+        {
+            var encryptedApplicationFiles = Directory.GetFiles(
+                Environment.CurrentDirectory,
+                "*.exe.enc"
+                );
+
+            if(encryptedApplicationFiles.Length == 1)
+            {
+                return encryptedApplicationFiles[0];
+            }
+
+            encryptedApplicationFiles = Directory.GetFiles(
+                Path.GetDirectoryName(GetType().Assembly.Location),
+                "*.exe.enc"
+                );
+
+            if (encryptedApplicationFiles.Length == 1)
+            {
+                return encryptedApplicationFiles[0];
+            }
+
+            return null;
+        }
+
+        private void DecryptApplication(string applicationPath)
+        {
             using var keyGenerator = new Rfc2898DeriveBytes(
-                tbPassword.Password, 
+                tbPassword.Password,
                 _salt,
                 1000,
-                HashAlgorithmName.SHA256);
+                HashAlgorithmName.SHA256
+            );
 
             using var encryptionAlgorithm = Rijndael.Create();
 
@@ -62,7 +98,7 @@ namespace Starter
             var decryptor = encryptionAlgorithm.CreateDecryptor(key, _iv);
 
             using var inputFileStream = new FileStream(
-                encryptedApplicationPath,
+                _encryptedApplicationPath,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.Read
@@ -87,20 +123,34 @@ namespace Starter
                     outputFileStream.Write(buffer, 0, bytesRead);
                 }
             }
+        }
 
+        private void StartApplicationAndWaitForExit(string applicationPath)
+        {
             var startInfo = new ProcessStartInfo(applicationPath);
 
             var process = Process.Start(startInfo);
 
-            Hide();
-
             process.WaitForExit();
+        }
 
-            File.Delete(applicationPath);
+        private void DeleteApplication(string applicationPath)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                Thread.Sleep(1000);
+                try
+                {
+                    File.Delete(applicationPath);
+                    return;
+                }
+                catch
+                {
 
-            Application.Current.Shutdown();
+                }
+            }
 
-            bStart.IsEnabled = true;
+            MessageBox.Show("Unable to delete application. Please, do it manually");
         }
     }
 }
